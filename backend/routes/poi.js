@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const POI = require('../models/POI');
+const POI = require('../models/Poi');
 
 // Aggiungere un nuovo POI
 router.post('/', async (req, res) => {
