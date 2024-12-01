@@ -5,6 +5,8 @@ import 'leaflet/dist/leaflet.css';
 import Legend from './Legend';
 import './Map.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+
 const POI_CATEGORIES = {
   "Eventi": [],
   "Cultura": [],
@@ -31,7 +33,7 @@ const Map = () => {
   useEffect(() => {
     const loadPois = async () => {
       try {
-        const response = await fetch('http://localhost:3000/pois');
+        const response = await fetch(`${API_URL}/pois`);
         const data = await response.json();
         console.log('POI caricati dal database:', data);
         const poisByCategory = data.reduce((acc, poi) => {
@@ -75,14 +77,14 @@ const Map = () => {
   const handleDeletePoi = async (poiId) => {
     if (window.confirm('Sei sicuro di voler eliminare questo punto di interesse?')) {
       try {
-        const response = await fetch(`http://localhost:3000/pois/${poiId}`, {
+        const response = await fetch(`${API_URL}/pois/${poiId}`, {
           method: 'DELETE'
         });
         
         if (response.ok) {
           const reloadPois = async () => {
             try {
-              const response = await fetch('http://localhost:3000/pois');
+              const response = await fetch(`${API_URL}/pois`);
               const data = await response.json();
               const poisByCategory = data.reduce((acc, poi) => {
                 const category = poi.category && POI_CATEGORIES.hasOwnProperty(poi.category) ? poi.category : 'Uncategorized';
@@ -126,7 +128,7 @@ const Map = () => {
     try {
       let response;
       if (editingPoi) {
-        response = await fetch(`http://localhost:3000/pois/${editingPoi._id}`, {
+        response = await fetch(`${API_URL}/pois/${editingPoi._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -138,7 +140,7 @@ const Map = () => {
           type: 'Point',
           coordinates: [newPoiCoords.lng, newPoiCoords.lat]
         };
-        response = await fetch('http://localhost:3000/pois', {
+        response = await fetch(`${API_URL}/pois`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -152,7 +154,7 @@ const Map = () => {
 
       const reloadPois = async () => {
         try {
-          const response = await fetch('http://localhost:3000/pois');
+          const response = await fetch(`${API_URL}/pois`);
           const data = await response.json();
           const poisByCategory = data.reduce((acc, poi) => {
             const category = poi.category && POI_CATEGORIES.hasOwnProperty(poi.category) ? poi.category : 'Uncategorized';
