@@ -1,0 +1,82 @@
+/* src/components/Map.css */
+.map-container {
+  position: relative;
+  height: 100vh;  /* Imposta l'altezza al 100% della viewport */
+  width: 100%;
+}
+
+.legend {
+  position: absolute;
+  top: 80px;  /* Aggiusta questa posizione per evitare la sovrapposizione */
+  left: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 1000;
+}
+
+.legend button {
+  display: block;
+  width: 100%;
+  margin-bottom: 5px;
+  padding: 5px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.legend button:hover {
+  background: #0056b3;
+}
+
+.new-point-button {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background-color: orange;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.new-point-form {
+  position: absolute;
+  bottom: 80px;
+  left: 20px;
+  background-color: white;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  z-index: 1000;
+  width: 200px;
+}
+
+.new-point-form input {
+  display: block;
+  width: calc(100% - 20px);
+  margin-bottom: 10px;
+  padding: 5px;
+}
+
+.new-point-form button {
+  background-color: orange;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.map-logo { 
+  position: absolute; 
+  top: 10px; 
+  right: 50px; 
+  width: 400px; /* Puoi regolare la larghezza secondo necessità */ 
+  z-index: 1000; }
+
+
+
