@@ -31,14 +31,23 @@ router.get('/', async (req, res) => {
 // Modificare un POI esistente
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description, location, category } = req.body;
+  const { name, description, link, category } = req.body;
   
   if (!category) {
     return res.status(400).json({ error: 'Category is required' });
   }
 
   try {
-    const poi = await POI.findByIdAndUpdate(id, { name, description, location, category }, { new: true });
+    const poi = await POI.findByIdAndUpdate(
+      id, 
+      { name, description, link, category }, 
+      { new: true, runValidators: true }
+    );
+
+    if (!poi) {
+      return res.status(404).json({ error: 'POI non trovato' });
+    }
+
     res.json(poi);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -49,7 +58,12 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    await POI.findByIdAndDelete(id);
+    const poi = await POI.findByIdAndDelete(id);
+
+    if (!poi) {
+      return res.status(404).json({ error: 'POI non trovato' });
+    }
+
     res.json({ message: 'POI cancellato con successo' });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -57,3 +71,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+
+
+
