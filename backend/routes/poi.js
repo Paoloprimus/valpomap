@@ -3,18 +3,53 @@ const POI = require('../models/Poi');
 
 // Aggiungere un nuovo POI
 router.post('/', async (req, res) => {
-  const { name, description, location, category } = req.body;
-
-  if (!category) {
-    return res.status(400).json({ error: 'Category is required' });
-  }
-
   try {
-    const poi = new POI({ name, description, location, category });
-    await poi.save();
-    res.status(201).json(poi);
+    console.log('Ricevuta richiesta POST POI:', req.body);
+    
+    const { name, description, location, category, link } = req.body;
+
+    // Validazione input completa
+    if (!name || !description || !location || !category) {
+      console.error('Dati mancanti:', { name, description, location, category });
+      return res.status(400).json({ 
+        error: 'Dati mancanti',
+        details: {
+          name: !name,
+          description: !description,
+          location: !location,
+          category: !category
+        }
+      });
+    }
+
+    // Validazione location
+    if (!location.type || !location.coordinates || 
+        location.coordinates.length !== 2 ||
+        !Array.isArray(location.coordinates)) {
+      console.error('Location non valida:', location);
+      return res.status(400).json({ 
+        error: 'Location non valida',
+        details: location 
+      });
+    }
+
+    const poi = new POI({
+      name,
+      description,
+      location,
+      category,
+      link
+    });
+
+    const savedPoi = await poi.save();
+    console.log('POI salvato con successo:', savedPoi);
+    res.status(201).json(savedPoi);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('Errore nel salvataggio POI:', err);
+    res.status(400).json({ 
+      error: err.message,
+      stack: err.stack
+    });
   }
 });
 
@@ -22,8 +57,10 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const pois = await POI.find();
+    console.log(`Recuperati ${pois.length} POI`);
     res.json(pois);
   } catch (err) {
+    console.error('Errore nel recupero POI:', err);
     res.status(400).json({ error: err.message });
   }
 });
@@ -33,6 +70,8 @@ router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { name, description, link, category } = req.body;
   
+  console.log('Tentativo di modifica POI:', { id, name, description, link, category });
+
   if (!category) {
     return res.status(400).json({ error: 'Category is required' });
   }
@@ -45,11 +84,14 @@ router.put('/:id', async (req, res) => {
     );
 
     if (!poi) {
+      console.log('POI non trovato per modifica:', id);
       return res.status(404).json({ error: 'POI non trovato' });
     }
 
+    console.log('POI modificato con successo:', poi);
     res.json(poi);
   } catch (err) {
+    console.error('Errore nella modifica del POI:', err);
     res.status(400).json({ error: err.message });
   }
 });
@@ -62,16 +104,22 @@ router.delete('/:id', async (req, res) => {
   try {
     const poi = await POI.findById(id);
     if (!poi) {
-      console.log('POI non trovato:', id);
+      console.log('POI non trovato per cancellazione:', id);
       return res.status(404).json({ error: 'POI non trovato' });
     }
 
     await POI.deleteOne({ _id: id });
-    console.log('POI cancellato con successo:', id);
-    res.json({ message: 'POI cancellato con successo', deletedPoi: poi });
+    console.log('POI cancellato con successo:', poi);
+    res.json({ 
+      message: 'POI cancellato con successo', 
+      deletedPoi: poi 
+    });
   } catch (err) {
     console.error('Errore durante la cancellazione:', err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ 
+      error: err.message,
+      details: err.stack
+    });
   }
 });
 

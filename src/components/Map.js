@@ -134,28 +134,24 @@ const Map = () => {
     };
 
     try {
-      let response;
-      if (editingPoi) {
-        response = await fetch(`${API_URL}/pois/${editingPoi._id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(poi)
-        });
-      } else {
-        response = await fetch(`${API_URL}/pois`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(poi)
-        });
+      console.log('Tentativo di aggiunta POI:', poi);
+      
+      const response = await fetch(`${API_URL}/pois`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(poi)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
       }
 
       const data = await response.json();
+      console.log('POI aggiunto con successo:', data);
       
-      // Aggiorna immediatamente l'interfaccia
       setPois(prevPois => {
         const newPois = { ...prevPois };
         const newPoi = {
@@ -163,26 +159,17 @@ const Map = () => {
           lat: data.location.coordinates[1],
           lng: data.location.coordinates[0]
         };
-        
-        if (editingPoi) {
-          newPois[category] = newPois[category].map(p => 
-            p._id === editingPoi._id ? newPoi : p
-          );
-        } else {
-          newPois[category] = [...(newPois[category] || []), newPoi];
-        }
-        
+        newPois[category] = [...(newPois[category] || []), newPoi];
         return newPois;
       });
 
       setShowForm(false);
-      setEditingPoi(null);
       setNewPoiCoords(null);
     } catch (err) {
-      console.error(editingPoi ? 'Errore nella modifica del POI:' : 'Errore nell\'aggiungere il POI:', err);
-      alert('Errore durante il salvataggio del POI');
+      console.error('Errore durante il salvataggio:', err);
+      alert(`Errore durante il salvataggio: ${err.message}`);
     }
-  };
+};
 
   const MapEvents = () => {
     useMapEvents({
