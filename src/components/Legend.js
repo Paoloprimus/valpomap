@@ -1,5 +1,6 @@
 // src/components/Legend.js
 import React from 'react';
+import './Legend.css';
 
 const Legend = ({ categories, activeCategories, onSelectCategory }) => {
   return (
