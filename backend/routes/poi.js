@@ -57,21 +57,22 @@ router.put('/:id', async (req, res) => {
 // Cancellare un POI esistente
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
+  console.log('Tentativo di cancellazione POI con ID:', id);
+  
   try {
-    const poi = await POI.findByIdAndDelete(id);
-
+    const poi = await POI.findById(id);
     if (!poi) {
+      console.log('POI non trovato:', id);
       return res.status(404).json({ error: 'POI non trovato' });
     }
 
-    res.json({ message: 'POI cancellato con successo' });
+    await POI.deleteOne({ _id: id });
+    console.log('POI cancellato con successo:', id);
+    res.json({ message: 'POI cancellato con successo', deletedPoi: poi });
   } catch (err) {
+    console.error('Errore durante la cancellazione:', err);
     res.status(400).json({ error: err.message });
   }
 });
 
 module.exports = router;
-
-
-
-

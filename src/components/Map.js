@@ -81,14 +81,21 @@ const Map = () => {
   const handleDeletePoi = async (poiId) => {
     if (window.confirm('Sei sicuro di voler eliminare questo punto di interesse?')) {
       try {
+        console.log('Tentativo di eliminazione POI:', poiId);
         const response = await fetch(`${API_URL}/pois/${poiId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
+          method: 'DELETE'
         });
         
-        if (response.ok) {
+        if (!response.ok) {
+          const errorData = await response.text();
+          throw new Error(errorData);
+        }
+        
+        const data = await response.json();
+        console.log('Risposta server:', data);
+  
+        // Aggiorna lo stato solo se la cancellazione è avvenuta con successo
+        if (data.message === 'POI cancellato con successo') {
           setPois(prevPois => {
             const newPois = { ...prevPois };
             Object.keys(newPois).forEach(category => {
@@ -96,14 +103,10 @@ const Map = () => {
             });
             return newPois;
           });
-          console.log('POI eliminato con successo');
-        } else {
-          console.error('Errore durante l\'eliminazione:', await response.text());
-          alert('Errore durante l\'eliminazione del POI');
         }
       } catch (err) {
         console.error('Errore nell\'eliminazione del POI:', err);
-        alert('Errore durante l\'eliminazione del POI');
+        alert(`Errore durante l'eliminazione del POI: ${err.message}`);
       }
     }
   };
