@@ -21,3 +21,4 @@ const Legend = ({ categories, activeCategories, onSelectCategory }) => {
 };
 
 export default Legend;
+

@@ -14,7 +14,6 @@ const POI_CATEGORIES = {
   "Sport": [],
   "Enograstronomia": [],
   "Ospitalità": [],
-  "Univalpo": []
 };
 
 const markerIconCustom = L.icon({
@@ -23,9 +22,25 @@ const markerIconCustom = L.icon({
   iconAnchor: [16, 26]
 });
 
+const InstructionsPopup = ({ onClose }) => (
+  <>
+    <div className="form-overlay" onClick={onClose} />
+    <div className="instructions-popup" onClick={e => e.stopPropagation()}>
+      <strong>Come usare la mappa:</strong>
+      <ul>
+        <li>👁️ Per vedere i punti: seleziona una o più categorie</li>
+        <li>📍 Per aggiungere un punto: seleziona una categoria e fai click destro</li>
+        <li>✏️ Per modificare: apri un punto e usa il pulsante "Modifica"</li>
+        <li>❌ Per eliminare: apri un punto e usa il pulsante "Elimina"</li>
+      </ul>
+    </div>
+  </>
+);
+
 const Map = () => {
   const [activeCategories, setActiveCategories] = useState(new Set());
   const [showForm, setShowForm] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [pois, setPois] = useState(POI_CATEGORIES);
   const [newPoiCoords, setNewPoiCoords] = useState(null);
   const [editingPoi, setEditingPoi] = useState(null);
@@ -81,21 +96,14 @@ const Map = () => {
   const handleDeletePoi = async (poiId) => {
     if (window.confirm('Sei sicuro di voler eliminare questo punto di interesse?')) {
       try {
-        console.log('Tentativo di eliminazione POI:', poiId);
         const response = await fetch(`${API_URL}/pois/${poiId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         
-        if (!response.ok) {
-          const errorData = await response.text();
-          throw new Error(errorData);
-        }
-        
-        const data = await response.json();
-        console.log('Risposta server:', data);
-  
-        // Aggiorna lo stato solo se la cancellazione è avvenuta con successo
-        if (data.message === 'POI cancellato con successo') {
+        if (response.ok) {
           setPois(prevPois => {
             const newPois = { ...prevPois };
             Object.keys(newPois).forEach(category => {
@@ -103,10 +111,14 @@ const Map = () => {
             });
             return newPois;
           });
+          console.log('POI eliminato con successo');
+        } else {
+          console.error('Errore durante l\'eliminazione:', await response.text());
+          alert('Errore durante l\'eliminazione del POI');
         }
       } catch (err) {
         console.error('Errore nell\'eliminazione del POI:', err);
-        alert(`Errore durante l'eliminazione del POI: ${err.message}`);
+        alert('Errore durante l\'eliminazione del POI');
       }
     }
   };
@@ -134,23 +146,26 @@ const Map = () => {
     };
 
     try {
-      console.log('Tentativo di aggiunta POI:', poi);
-      
-      const response = await fetch(`${API_URL}/pois`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(poi)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText);
+      let response;
+      if (editingPoi) {
+        response = await fetch(`${API_URL}/pois/${editingPoi._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(poi)
+        });
+      } else {
+        response = await fetch(`${API_URL}/pois`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(poi)
+        });
       }
 
       const data = await response.json();
-      console.log('POI aggiunto con successo:', data);
       
       setPois(prevPois => {
         const newPois = { ...prevPois };
@@ -159,17 +174,26 @@ const Map = () => {
           lat: data.location.coordinates[1],
           lng: data.location.coordinates[0]
         };
-        newPois[category] = [...(newPois[category] || []), newPoi];
+        
+        if (editingPoi) {
+          newPois[category] = newPois[category].map(p => 
+            p._id === editingPoi._id ? newPoi : p
+          );
+        } else {
+          newPois[category] = [...(newPois[category] || []), newPoi];
+        }
+        
         return newPois;
       });
 
       setShowForm(false);
+      setEditingPoi(null);
       setNewPoiCoords(null);
     } catch (err) {
-      console.error('Errore durante il salvataggio:', err);
-      alert(`Errore durante il salvataggio: ${err.message}`);
+      console.error(editingPoi ? 'Errore nella modifica del POI:' : 'Errore nell\'aggiungere il POI:', err);
+      alert('Errore durante il salvataggio del POI');
     }
-};
+  };
 
   const MapEvents = () => {
     useMapEvents({
@@ -184,7 +208,7 @@ const Map = () => {
         <img src="/univalpologo.png" alt="Logo" className="map-logo" />
       </div>
       <div className="map-container">
-        <MapContainer center={[45.5, 11]} zoom={12} style={{ height: '100%', width: '100%' }}>
+        <MapContainer center={[45.5, 11]} zoom={11} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -240,20 +264,18 @@ const Map = () => {
             </div>
           </>
         )}
+        {showInstructions && <InstructionsPopup onClose={() => setShowInstructions(false)} />}
       </div>
       <div className="footer-container">
-        <div className="instructions">
-          <strong>Come usare la mappa:</strong>
-          <ul>
-            <li>👁️ Per vedere i punti: seleziona una o più categorie dalla legenda a sinistra</li>
-            <li>📍 Per aggiungere un punto: seleziona una categoria e fai click destro sulla mappa</li>
-            <li>✏️ Per modificare: apri un punto e usa il pulsante "Modifica"</li>
-            <li>❌ Per eliminare: apri un punto e usa il pulsante "Elimina"</li>
-          </ul>
-        </div>
+        <button 
+          className="instructions-button"
+          onClick={() => setShowInstructions(true)}
+        >
+          Istruzioni
+        </button>
       </div>
     </>
-   );
-   };
-   
-   export default Map;
+  );
+};
+
+export default Map;
