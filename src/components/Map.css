@@ -1,46 +1,55 @@
-/* src/components/Map.css */
 .map-container {
-  position: relative;
-  height: 100vh;  /* Imposta l'altezza al 100% della viewport */
-  width: 100%;
+  position: absolute;
+  top: 10vh;
+  bottom: 10vh;
+  left: 0;
+  right: 0;
+  background-color: white;
+}
+
+.header-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10vh;
+  background-color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.map-logo {
+  height: 80%;
+  object-fit: contain;
 }
 
 .legend {
   position: absolute;
-  top: 80px;  /* Aggiusta questa posizione per evitare la sovrapposizione */
-  left: 10px;
-  padding: 10px;
+  top: 15vh;
+  left: 5vh;
+  padding: 8px;
   border-radius: 5px;
   z-index: 1000;
 }
 
 .legend button {
   display: block;
-  width: 100%;
-  margin-bottom: 5px;
-  padding: 5px;
-  background: #007bff;
+  width: 130px;  /* Larghezza fissa più piccola */
+  margin-bottom: 4px;  /* Spazio tra i bottoni ridotto */
+  padding: 6px 8px;    /* Padding interno ridotto */
   color: white;
   border: none;
   border-radius: 3px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;     /* Dimensione del testo ridotta */
+  line-height: 1.2;    /* Altezza della linea ridotta */
 }
 
 .legend button:hover {
-  background: #0056b3;
-}
-
-.new-point-button {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  background-color: orange;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  z-index: 1000;
+  opacity: 0.9;
 }
 
 .new-point-form {
@@ -52,31 +61,41 @@
   border: 1px solid #ccc;
   border-radius: 5px;
   z-index: 1000;
-  width: 200px;
+  width: 250px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.new-point-form input {
+.new-point-form input,
+.new-point-form select {
   display: block;
-  width: calc(100% - 20px);
+  width: 100%;
   margin-bottom: 10px;
-  padding: 5px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 .new-point-form button {
-  background-color: orange;
+  width: 100%;
+  background-color: #28a745;
   color: white;
   border: none;
   padding: 10px;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.map-logo { 
-  position: absolute; 
-  top: 10px; 
-  right: 50px; 
-  width: 400px; /* Puoi regolare la larghezza secondo necessità */ 
-  z-index: 1000; }
+.new-point-form button:hover {
+  background-color: #218838;
+}
 
-
+.form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 999;
+}
 

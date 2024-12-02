@@ -78,31 +78,28 @@ const Map = () => {
     if (window.confirm('Sei sicuro di voler eliminare questo punto di interesse?')) {
       try {
         const response = await fetch(`${API_URL}/pois/${poiId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         
         if (response.ok) {
-          const reloadPois = async () => {
-            try {
-              const response = await fetch(`${API_URL}/pois`);
-              const data = await response.json();
-              const poisByCategory = data.reduce((acc, poi) => {
-                const category = poi.category && POI_CATEGORIES.hasOwnProperty(poi.category) ? poi.category : 'Uncategorized';
-                if (!acc[category]) {
-                  acc[category] = [];
-                }
-                acc[category].push({ ...poi, lat: poi.location.coordinates[1], lng: poi.location.coordinates[0] });
-                return acc;
-              }, { ...POI_CATEGORIES });
-              setPois(poisByCategory);
-            } catch (err) {
-              console.error('Errore nel ricaricamento dei POI:', err);
-            }
-          };
-          reloadPois();
+          setPois(prevPois => {
+            const newPois = { ...prevPois };
+            Object.keys(newPois).forEach(category => {
+              newPois[category] = newPois[category].filter(poi => poi._id !== poiId);
+            });
+            return newPois;
+          });
+          console.log('POI eliminato con successo');
+        } else {
+          console.error('Errore durante l\'eliminazione:', await response.text());
+          alert('Errore durante l\'eliminazione del POI');
         }
       } catch (err) {
         console.error('Errore nell\'eliminazione del POI:', err);
+        alert('Errore durante l\'eliminazione del POI');
       }
     }
   };
@@ -187,71 +184,78 @@ const Map = () => {
   };
 
   return (
-    <div className="map-container">
-      <img src="/univalpologo.png" alt="Logo" className="map-logo" />
-      <MapContainer center={[45.5, 11]} zoom={12} style={{ height: '100%', width: '100%' }}>
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    <>
+      <div className="header-container">
+        <img src="/univalpologo.png" alt="Logo" className="map-logo" />
+      </div>
+      <div className="map-container">
+        <MapContainer center={[45.5, 11]} zoom={12} style={{ height: '100%', width: '100%' }}>
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          />
+          {Object.entries(pois).map(([category, categoryPois]) => 
+            activeCategories.has(category) && categoryPois.map((poi, index) => (
+              <Marker key={`${category}-${index}`} position={[poi.lat, poi.lng]} icon={markerIconCustom}>
+                <Popup>
+                  <strong>{poi.name}</strong><br />
+                  {poi.description}<br />
+                  {poi.link && <a href={poi.link} target="_blank" rel="noopener noreferrer">Visita il sito</a>}
+                  <div style={{marginTop: '10px'}}>
+                    <button onClick={() => handleEditPoi(poi)} style={{marginRight: '10px'}}>Modifica</button>
+                    <button onClick={() => handleDeletePoi(poi._id)}>Elimina</button>
+                  </div>
+                </Popup>
+              </Marker>
+            ))
+          )}
+          <MapEvents />
+        </MapContainer>
+        <Legend 
+          categories={Object.keys(pois)} 
+          activeCategories={activeCategories} 
+          onSelectCategory={handleSelectCategory} 
         />
-        {Object.entries(pois).map(([category, categoryPois]) => 
-          activeCategories.has(category) && categoryPois.map((poi, index) => (
-            <Marker key={`${category}-${index}`} position={[poi.lat, poi.lng]} icon={markerIconCustom}>
-              <Popup>
-                <strong>{poi.name}</strong><br />
-                {poi.description}<br />
-                {poi.link && <a href={poi.link} target="_blank" rel="noopener noreferrer">Visita il sito</a>}
-                <div style={{marginTop: '10px'}}>
-                  <button onClick={() => handleEditPoi(poi)} style={{marginRight: '10px'}}>Modifica</button>
-                  <button onClick={() => handleDeletePoi(poi._id)}>Elimina</button>
-                </div>
-              </Popup>
-            </Marker>
-          ))
+        {showForm && (
+          <>
+            <div className="form-overlay" onClick={() => setShowForm(false)} />
+            <div id="new-point-form" className="new-point-form" onClick={e => e.stopPropagation()}>
+              <h3>{editingPoi ? 'Modifica Punto' : 'Aggiungi Nuovo Punto'}</h3>
+              <input 
+                type="text" 
+                id="poi-name" 
+                placeholder="Nome" 
+                defaultValue={editingPoi ? editingPoi.name : ''}
+              />
+              <input 
+                type="text" 
+                id="poi-description" 
+                placeholder="Descrizione" 
+                defaultValue={editingPoi ? editingPoi.description : ''}
+              />
+              <input 
+                type="text" 
+                id="poi-link" 
+                placeholder="Link (opzionale)" 
+                defaultValue={editingPoi ? editingPoi.link : ''}
+              />
+              <select 
+                id="poi-category"
+                defaultValue={editingPoi ? editingPoi.category : ''}
+              >
+                <option value="">Seleziona Categoria</option>
+                {Object.keys(pois).map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              <button onClick={handleAddPOI}>
+                {editingPoi ? 'Salva Modifiche' : 'Aggiungi'}
+              </button>
+            </div>
+          </>
         )}
-        <MapEvents />
-      </MapContainer>
-      <Legend 
-        categories={Object.keys(pois)} 
-        activeCategories={activeCategories} 
-        onSelectCategory={handleSelectCategory} 
-      />
-      {showForm && (
-        <div id="new-point-form" className="new-point-form">
-          <h3>{editingPoi ? 'Modifica Punto' : 'Aggiungi Nuovo Punto'}</h3>
-          <input 
-            type="text" 
-            id="poi-name" 
-            placeholder="Nome" 
-            defaultValue={editingPoi ? editingPoi.name : ''}
-          />
-          <input 
-            type="text" 
-            id="poi-description" 
-            placeholder="Descrizione" 
-            defaultValue={editingPoi ? editingPoi.description : ''}
-          />
-          <input 
-            type="text" 
-            id="poi-link" 
-            placeholder="Link (opzionale)" 
-            defaultValue={editingPoi ? editingPoi.link : ''}
-          />
-          <select 
-            id="poi-category"
-            defaultValue={editingPoi ? editingPoi.category : ''}
-          >
-            <option value="">Seleziona Categoria</option>
-            {Object.keys(pois).map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-          <button onClick={handleAddPOI}>
-            {editingPoi ? 'Salva Modifiche' : 'Aggiungi'}
-          </button>
-        </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 };
 
