@@ -241,8 +241,19 @@ const Map = () => {
           </>
         )}
       </div>
+      <div className="footer-container">
+        <div className="instructions">
+          <strong>Come usare la mappa:</strong>
+          <ul>
+            <li>👁️ Per vedere i punti: seleziona una o più categorie dalla legenda a sinistra</li>
+            <li>📍 Per aggiungere un punto: seleziona una categoria e fai click destro sulla mappa</li>
+            <li>✏️ Per modificare: apri un punto e usa il pulsante "Modifica"</li>
+            <li>❌ Per eliminare: apri un punto e usa il pulsante "Elimina"</li>
+          </ul>
+        </div>
+      </div>
     </>
-  );
-};
-
-export default Map;
+   );
+   };
+   
+   export default Map;
