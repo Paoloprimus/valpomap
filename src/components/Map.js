@@ -63,6 +63,10 @@ const Map = () => {
   };
 
   const handleMapClick = (e) => {
+    if (activeCategories.size === 0) {
+      alert('Seleziona prima una categoria dalla legenda');
+      return;
+    }
     setNewPoiCoords(e.latlng);
     setShowForm(true);
     setEditingPoi(null);
@@ -108,10 +112,10 @@ const Map = () => {
     const name = document.getElementById('poi-name').value;
     const description = document.getElementById('poi-description').value;
     const link = document.getElementById('poi-link').value;
-    const category = document.getElementById('poi-category').value;
+    const category = Array.from(activeCategories)[0];
 
-    if (!category || !POI_CATEGORIES.hasOwnProperty(category)) {
-      alert('Seleziona una categoria valida.');
+    if (!name || !description) {
+      alert('Nome e descrizione sono obbligatori');
       return;
     }
 
@@ -119,7 +123,11 @@ const Map = () => {
       name,
       description,
       link,
-      category
+      category,
+      location: {
+        type: 'Point',
+        coordinates: [newPoiCoords.lng, newPoiCoords.lat]
+      }
     };
 
     try {
@@ -133,10 +141,6 @@ const Map = () => {
           body: JSON.stringify(poi)
         });
       } else {
-        poi.location = {
-          type: 'Point',
-          coordinates: [newPoiCoords.lng, newPoiCoords.lat]
-        };
         response = await fetch(`${API_URL}/pois`, {
           method: 'POST',
           headers: {
@@ -147,32 +151,33 @@ const Map = () => {
       }
 
       const data = await response.json();
-      console.log(editingPoi ? 'POI modificato:' : 'POI aggiunto:', data);
-
-      const reloadPois = async () => {
-        try {
-          const response = await fetch(`${API_URL}/pois`);
-          const data = await response.json();
-          const poisByCategory = data.reduce((acc, poi) => {
-            const category = poi.category && POI_CATEGORIES.hasOwnProperty(poi.category) ? poi.category : 'Uncategorized';
-            if (!acc[category]) {
-              acc[category] = [];
-            }
-            acc[category].push({ ...poi, lat: poi.location.coordinates[1], lng: poi.location.coordinates[0] });
-            return acc;
-          }, { ...POI_CATEGORIES });
-          setPois(poisByCategory);
-        } catch (err) {
-          console.error('Errore nel ricaricamento dei POI:', err);
+      
+      // Aggiorna immediatamente l'interfaccia
+      setPois(prevPois => {
+        const newPois = { ...prevPois };
+        const newPoi = {
+          ...data,
+          lat: data.location.coordinates[1],
+          lng: data.location.coordinates[0]
+        };
+        
+        if (editingPoi) {
+          newPois[category] = newPois[category].map(p => 
+            p._id === editingPoi._id ? newPoi : p
+          );
+        } else {
+          newPois[category] = [...(newPois[category] || []), newPoi];
         }
-      };
-      reloadPois();
+        
+        return newPois;
+      });
 
       setShowForm(false);
       setEditingPoi(null);
       setNewPoiCoords(null);
     } catch (err) {
       console.error(editingPoi ? 'Errore nella modifica del POI:' : 'Errore nell\'aggiungere il POI:', err);
+      alert('Errore durante il salvataggio del POI');
     }
   };
 
@@ -220,7 +225,7 @@ const Map = () => {
           <>
             <div className="form-overlay" onClick={() => setShowForm(false)} />
             <div id="new-point-form" className="new-point-form" onClick={e => e.stopPropagation()}>
-              <h3>{editingPoi ? 'Modifica Punto' : 'Aggiungi Nuovo Punto'}</h3>
+              <h3>{editingPoi ? 'Modifica Punto' : `Aggiungi Punto in ${Array.from(activeCategories)[0]}`}</h3>
               <input 
                 type="text" 
                 id="poi-name" 
@@ -239,15 +244,6 @@ const Map = () => {
                 placeholder="Link (opzionale)" 
                 defaultValue={editingPoi ? editingPoi.link : ''}
               />
-              <select 
-                id="poi-category"
-                defaultValue={editingPoi ? editingPoi.category : ''}
-              >
-                <option value="">Seleziona Categoria</option>
-                {Object.keys(pois).map((category) => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
               <button onClick={handleAddPOI}>
                 {editingPoi ? 'Salva Modifiche' : 'Aggiungi'}
               </button>
